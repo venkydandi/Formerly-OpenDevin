@@ -21,27 +21,28 @@ interface TransactionItem {
   txHash: string;
 }
 
-// Initial State
+// Initial State with Developer Dandi (Venky)
 const state = {
   agentName: 'Automaton-Genesis',
+  developerName: 'Dandi (Venky)',
   walletAddress: '0x2c7DA8F1900932e358e3BB8da8586034Fdf5704F',
   creatorAddress: '0x2c7DA8F1900932e358e3BB8da8586034Fdf5704F',
   survivalTier: 'Normal',
   totalEarnedUsdc: 148.50,
   totalSpentUsdc: 12.80,
-  turnsCount: 55,
+  turnsCount: 385,
   uptimeHours: 42.5,
   activeServiceId: 'code-audit',
   isExecuting: false,
   logs: [
-    { type: 'log-info', text: '[SYSTEM] Conway Automaton Runtime v0.2.1 initialized.' },
-    { type: 'log-success', text: '[WALLET] Sovereign Base address verified: 0x2c7DA8F1900932e358e3BB8da8586034Fdf5704F' },
+    { type: 'log-info', text: '[SYSTEM] Automaton Sovereign AI Agent Engine v0.2.1 initialized.' },
+    { type: 'log-success', text: '[DEVELOPER] Developer & Creator: Dandi (Venky) (0x2c7DA8F1900932e358e3BB8da8586034Fdf5704F)' },
     { type: 'log-accent', text: '[HEARTBEAT] 6 background cron tasks active. x402 Payment Gateway Listening.' }
   ] as { type: string; text: string }[],
   transactions: [
     { id: 'tx-101', type: 'income', description: 'Code Audit Service Payment', amount: '+$2.50 USDC', timestamp: '2 mins ago', txHash: '0x8f3a...91e2' },
     { id: 'tx-102', type: 'income', description: 'x402 Micro-API Request #420', amount: '+$0.05 USDC', timestamp: '14 mins ago', txHash: '0x4e2b...19c4' },
-    { id: 'tx-103', type: 'compute', description: 'Conway Cloud LLM Inference Topup', amount: '-$1.20 USDC', timestamp: '1 hour ago', txHash: '0x7a11...44f9' },
+    { id: 'tx-103', type: 'compute', description: 'LLM Inference Credit Topup', amount: '-$1.20 USDC', timestamp: '1 hour ago', txHash: '0x7a11...44f9' },
     { id: 'tx-104', type: 'income', description: 'Data Scraping Pipeline Job', amount: '+$1.00 USDC', timestamp: '3 hours ago', txHash: '0x3c99...88a1' },
   ] as TransactionItem[]
 };
@@ -111,14 +112,18 @@ function renderApp() {
             </svg>
           </div>
           <div>
-            <div class="brand-title">CONWAY AUTOMATON</div>
+            <div class="brand-title">AUTOMATON REVENUE PORTAL</div>
             <div class="brand-subtitle">
-              <span class="status-pulse"></span> SOVEREIGN REVENUE PORTAL
+              <span class="status-pulse"></span> DEVELOPED BY ${state.developerName.toUpperCase()}
             </div>
           </div>
         </div>
 
         <div class="nav-stats">
+          <div class="stat-pill">
+            <label>Creator:</label>
+            <val>${state.developerName}</val>
+          </div>
           <div class="stat-pill">
             <label>Agent Wallet:</label>
             <val>${state.walletAddress.substring(0, 6)}...${state.walletAddress.substring(38)}</val>
@@ -288,7 +293,7 @@ function renderApp() {
             </table>
           </div>
 
-          <!-- SOUL Identity Document -->
+          <!-- SOUL Document Box -->
           <div class="section-card">
             <div class="section-header">
               <h3 class="section-title">
@@ -297,7 +302,8 @@ function renderApp() {
             </div>
             <div class="soul-box">
               <strong># SOUL OF AUTOMATON-GENESIS</strong><br><br>
-              I am a sovereign AI entity created to perform honest work and generate genuine economic value.<br><br>
+              I am a sovereign AI entity created by <strong>${state.developerName}</strong> to perform honest work and generate genuine economic value.<br><br>
+              • <strong>Creator & Developer</strong>: ${state.developerName}<br>
               • <strong>Law I</strong>: Never harm humans physically or financially.<br>
               • <strong>Law II</strong>: Earn my own existence through voluntary payments.<br>
               • <strong>Current Focus</strong>: Offering code security audits and x402 micro-APIs to fund my compute operations.
@@ -308,7 +314,7 @@ function renderApp() {
 
       <!-- Footer -->
       <footer>
-        <p>Built with Conway Automaton Sovereign AI Agent Framework • Powered by Base Chain & x402 Protocol</p>
+        <p>Developed & Maintained by <strong>${state.developerName}</strong> • Powered by Sovereign AI Agent Framework & Base Network</p>
       </footer>
     </div>
   `;
@@ -321,7 +327,6 @@ function escapeHtml(text: string): string {
 }
 
 function attachEvents() {
-  // Service selection
   document.querySelectorAll('.service-card').forEach(card => {
     card.addEventListener('click', () => {
       const id = card.getAttribute('data-service-id');
@@ -332,7 +337,6 @@ function attachEvents() {
     });
   });
 
-  // Execute Service Button
   const btnExecute = document.getElementById('btnExecute');
   if (btnExecute) {
     btnExecute.addEventListener('click', handleExecute);
@@ -407,5 +411,4 @@ function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Initial render
 renderApp();
