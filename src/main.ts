@@ -34,6 +34,9 @@ const state = {
   uptimeHours: 42.5,
   activeServiceId: 'code-audit',
   isExecuting: false,
+  toastMessage: '',
+  txFilter: 'all' as 'all' | 'income' | 'compute',
+  outputReport: '' as string,
   logs: [
     { type: 'log-info', text: '[SYSTEM] Automaton Sovereign AI Agent Engine v0.2.1 initialized.' },
     { type: 'log-success', text: '[DEVELOPER] Developer & Creator: Dandi (Venky) (0x2c7DA8F1900932e358e3BB8da8586034Fdf5704F)' },
@@ -44,6 +47,7 @@ const state = {
     { id: 'tx-102', type: 'income', description: 'x402 Micro-API Request #420', amount: '+$0.05 USDC', timestamp: '14 mins ago', txHash: '0x4e2b...19c4' },
     { id: 'tx-103', type: 'compute', description: 'LLM Inference Credit Topup', amount: '-$1.20 USDC', timestamp: '1 hour ago', txHash: '0x7a11...44f9' },
     { id: 'tx-104', type: 'income', description: 'Data Scraping Pipeline Job', amount: '+$1.00 USDC', timestamp: '3 hours ago', txHash: '0x3c99...88a1' },
+    { id: 'tx-105', type: 'compute', description: 'Withdrawal to Creator (Dandi)', amount: '-$25.00 USDC', timestamp: '5 hours ago', txHash: '5s7l...gsol' }
   ] as TransactionItem[]
 };
 
@@ -100,6 +104,7 @@ function renderApp() {
 
   const netProfit = (state.totalEarnedUsdc - state.totalSpentUsdc).toFixed(2);
   const activeService = services.find(s => s.id === state.activeServiceId) || services[0];
+  const filteredTxs = state.transactions.filter(t => state.txFilter === 'all' || t.type === state.txFilter);
 
   app.innerHTML = `
     <div class="app-container">
@@ -120,13 +125,13 @@ function renderApp() {
         </div>
 
         <div class="nav-stats">
-          <div class="stat-pill">
-            <label>Creator:</label>
-            <val>${state.developerName}</val>
+          <div class="stat-pill" style="cursor: pointer" id="btnCopyAddress" title="Click to copy wallet address">
+            <label>Wallet:</label>
+            <val>${state.walletAddress.substring(0, 6)}...${state.walletAddress.substring(38)} 📋</val>
           </div>
           <div class="stat-pill">
-            <label>Agent Wallet:</label>
-            <val>${state.walletAddress.substring(0, 6)}...${state.walletAddress.substring(38)}</val>
+            <label>Developer:</label>
+            <val>${state.developerName}</val>
           </div>
           <div class="stat-pill">
             <label>Survival Tier:</label>
@@ -134,6 +139,8 @@ function renderApp() {
           </div>
         </div>
       </header>
+
+      ${state.toastMessage ? `<div class="toast-notification">${escapeHtml(state.toastMessage)}</div>` : ''}
 
       <!-- Hero Metrics -->
       <section class="hero-grid">
@@ -172,7 +179,7 @@ function renderApp() {
 
         <div class="metric-card">
           <div class="metric-header">
-            <span class="metric-title">Active Services</span>
+            <span class="metric-title">Active AI Services</span>
             <div class="metric-icon" style="color: var(--accent-rose); background: rgba(244,63,94,0.15)">🛠️</div>
           </div>
           <div class="metric-value">${services.length}</div>
@@ -192,7 +199,7 @@ function renderApp() {
               <h3 class="section-title">
                 <span>🛒</span> Autonomous AI Service Marketplace
               </h3>
-              <span style="font-size: 0.8rem; color: var(--text-secondary)">Select a service to request execution</span>
+              <span style="font-size: 0.8rem; color: var(--text-secondary)">Select a service to execute</span>
             </div>
 
             <div class="services-grid">
@@ -256,6 +263,15 @@ function renderApp() {
                 ${state.logs.map(log => `<div class="log-line ${log.type}">${escapeHtml(log.text)}</div>`).join('')}
               </div>
             </div>
+
+            ${state.outputReport ? `
+              <div style="margin-top: 1.25rem; background: rgba(16,185,129,0.06); border: 1px solid var(--accent-emerald); border-radius: var(--radius-md); padding: 1.25rem;">
+                <h4 style="color: var(--accent-emerald); font-family: var(--font-heading); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                  <span>📑</span> Execution Delivery Output Report
+                </h4>
+                <pre style="font-family: var(--font-mono); font-size: 0.8rem; color: #e2e8f0; white-space: pre-wrap; word-break: break-all;">${escapeHtml(state.outputReport)}</pre>
+              </div>
+            ` : ''}
           </div>
         </div>
 
@@ -267,7 +283,11 @@ function renderApp() {
               <h3 class="section-title">
                 <span>💳</span> Wallet Transactions
               </h3>
-              <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">Base Network</span>
+              <div style="display: flex; gap: 0.4rem;">
+                <button class="tx-filter-btn ${state.txFilter === 'all' ? 'active' : ''}" data-filter="all">All</button>
+                <button class="tx-filter-btn ${state.txFilter === 'income' ? 'active' : ''}" data-filter="income">Income</button>
+                <button class="tx-filter-btn ${state.txFilter === 'compute' ? 'active' : ''}" data-filter="compute">Payouts</button>
+              </div>
             </div>
 
             <table class="tx-table">
@@ -278,7 +298,7 @@ function renderApp() {
                 </tr>
               </thead>
               <tbody>
-                ${state.transactions.map(tx => `
+                ${filteredTxs.map(tx => `
                   <tr>
                     <td>
                       <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(tx.description)}</div>
@@ -326,12 +346,39 @@ function escapeHtml(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+function showToast(msg: string) {
+  state.toastMessage = msg;
+  renderApp();
+  setTimeout(() => {
+    state.toastMessage = '';
+    renderApp();
+  }, 3000);
+}
+
 function attachEvents() {
   document.querySelectorAll('.service-card').forEach(card => {
     card.addEventListener('click', () => {
       const id = card.getAttribute('data-service-id');
       if (id && !state.isExecuting) {
         state.activeServiceId = id;
+        renderApp();
+      }
+    });
+  });
+
+  const btnCopy = document.getElementById('btnCopyAddress');
+  if (btnCopy) {
+    btnCopy.addEventListener('click', () => {
+      navigator.clipboard.writeText(state.walletAddress);
+      showToast(`Copied wallet address to clipboard: ${state.walletAddress}`);
+    });
+  }
+
+  document.querySelectorAll('.tx-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const f = btn.getAttribute('data-filter') as any;
+      if (f) {
+        state.txFilter = f;
         renderApp();
       }
     });
@@ -351,6 +398,7 @@ async function handleExecute() {
   const targetVal = inputEl ? inputEl.value : activeService.defaultInput;
 
   state.isExecuting = true;
+  state.outputReport = '';
   renderApp();
 
   const addLog = (type: string, text: string) => {
@@ -385,18 +433,26 @@ async function handleExecute() {
   if (activeService.id === 'code-audit') {
     addLog('log-accent', `[TOOL_EXEC] Scanning AST & static analysis rules on target repo...`);
     await delay(1100);
+    const reportText = `[AUDIT SUMMARY]\nTarget: ${targetVal}\nStatus: PASSED\nCritical Vulnerabilities: 0\nHigh Risk Injections: 0\nCode Safety Index: 100/100 (Clean)`;
+    state.outputReport = reportText;
     addLog('log-success', `[AUDIT_REPORT] Scan complete: 0 Critical, 0 High vulnerabilities. Code is clean!`);
   } else if (activeService.id === 'x402-api') {
     addLog('log-accent', `[TOOL_EXEC] Fetching & vectorizing web search index...`);
     await delay(900);
+    const reportText = `{\n  "query": "${targetVal}",\n  "status": 200,\n  "results": [\n    {"title": "Autonomous AI Agent Market Analysis", "relevance": 0.99}\n  ]\n}`;
+    state.outputReport = reportText;
     addLog('log-success', `[API_RESPONSE] 200 OK — Delivered 1.4KB structured JSON payload to client.`);
   } else if (activeService.id === 'data-pipeline') {
     addLog('log-accent', `[TOOL_EXEC] Scraping multi-source data endpoints...`);
     await delay(1000);
+    const reportText = `[DATASET SUMMARY]\nRecords Processed: 120 rows\nData Format: JSON\nValidation: Cleaned & Normalized`;
+    state.outputReport = reportText;
     addLog('log-success', `[PIPELINE_COMPLETE] Formatted 120 dataset rows to target JSON.`);
   } else {
     addLog('log-accent', `[TOOL_EXEC] Generating TypeScript code patch & running unit tests...`);
     await delay(1200);
+    const reportText = `[GITHUB PULL REQUEST]\nTitle: Feature: ${targetVal}\nBranch: feature/ai-auto-patch\nTests: 14/14 Passed\nStatus: PR #42 Created & Ready for Review`;
+    state.outputReport = reportText;
     addLog('log-success', `[PR_SUBMITTED] Created GitHub Pull Request #42: "Add OpenRouter provider support".`);
   }
 
