@@ -1,0 +1,8 @@
+# Render.com 24/7 Free Cloud Deployment Blueprint
+services:
+  - type: web
+    name: automaton-revenue-portal
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    autoDeploy: true
